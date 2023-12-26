@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -8,98 +8,18 @@ import {
   SafeAreaView,
   TouchableOpacity,
 } from 'react-native';
-import {
-  getDatabase,
-  ref,
-  onValue,
-} from 'firebase/database';
-import app from './firebase';
+import useFastFoodData from './useFastFoodData';
 
 const FastFood = () => {
-  const [fastFoodData, setFastFoodData] = useState([]);
-  const [filteredData, setFilteredData] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortOrder, setSortOrder] = useState('asc'); // Default ascending order
+  const {
+    fastFoodData,
+    filteredData,
+    searchQuery,
+    setSearchQuery,
+    toggleSortOrder,
+  } = useFastFoodData('asc');
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const db = getDatabase(app);
-      const fastFoodCollection = ref(db, 'fastFood');
-
-      const unsubscribe = onValue(fastFoodCollection, (snapshot) => {
-        const data = Object.entries(snapshot.val() || {}).map(([key, value]) => ({
-          key,
-          ...value,
-        }));
-
-        console.log("dfsfsdfsdfs", data);
-        setFastFoodData(data);
-        filterData(data, searchQuery);
-      });
-
-      return () => unsubscribe();
-    };
-
-    fetchData();
-  }, [searchQuery]);
-
-  const toggleSortOrder = () => {
-    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-  };
-
-  const filterData = (data, query) => {
-    if (!data) {
-      setFilteredData([]);
-      return;
-    }
-
-    const filtered = data.filter((item) => {
-      const name = (item.name || '').toLowerCase();
-      const city = (item.city || '').toLowerCase();
-      const state = (item.state || '').toLowerCase();
-
-      return (
-        name.includes(query.toLowerCase()) ||
-        city.includes(query.toLowerCase()) ||
-        state.includes(query.toLowerCase())
-      );
-    });
-
-    const sortedData = filtered.sort((a, b) => {
-      const sortOrderFactor = sortOrder === 'asc' ? 1 : -1;
-      return sortOrderFactor * (a.rank - b.rank);
-    });
-
-    const sections = sortedData.reduce((acc, item) => {
-      const state = item.state || 'Other';
-      const existingSection = acc.find((section) => section.title === state);
-
-      if (existingSection) {
-        existingSection.data.push(item);
-      } else {
-        acc.push({ title: state, data: [item] });
-      }
-
-      return acc;
-    }, []);
-
-    setFilteredData(sections);
-  };
-
-  const renderSectionHeader = ({ section: { title } }) => (
-    <Text style={styles.sectionHeader}>{title}</Text>
-  );
-
-  const renderItem = ({ item }) => (
-    <View style={styles.cardContainer}>
-      <View style={styles.foodDetails}>
-        <Text style={styles.foodTitle}>{item.name}</Text>
-        <Text style={styles.foodDetailsText}>City: {item.city}</Text>
-        <Text style={styles.foodDetailsText}>State: {item.state}</Text>
-        <Text style={styles.foodDetailsText}>Rank: {item.rank}</Text>
-      </View>
-    </View>
-  );
+  // Rest of your component code...
 
   return (
     <SafeAreaView style={styles.container}>
@@ -110,7 +30,6 @@ const FastFood = () => {
           placeholder="Search..."
           onChangeText={(text) => {
             setSearchQuery(text);
-            filterData(fastFoodData, text);
           }}
           value={searchQuery}
         />
@@ -134,8 +53,9 @@ const FastFood = () => {
   );
 };
 
+
 const styles = StyleSheet.create({
-  // ... (your existing styles)
+
   filterContainer: {
     flexDirection: 'row',
     alignItems: 'center',
